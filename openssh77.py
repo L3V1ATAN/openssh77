@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 import argparse
@@ -11,7 +10,6 @@ import os
 class InvalidUsername(Exception):
     pass
 
-# Print valid users found out so far
 def print_result(valid_users):
     if valid_users:
         print("Valid Users: ")
@@ -20,7 +18,6 @@ def print_result(valid_users):
     else:
         print("No valid user detected.")
 
-# Perform authentication with a public key and username
 def check_user(username, target, port):
     try:
         # Create a socket connection
