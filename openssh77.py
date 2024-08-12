@@ -118,7 +118,7 @@ def main():
                         help="print both valid and invalid usernames (default: False)")
     parser.add_argument('-6', '--ipv6', action='store_true', help="Specify use of an ipv6 address (default: ipv4)")
 
-    multi_or_single_group = parser.add_mutually exclusive_group(required=True)
+    multi_or_single_group = parser.add_mutually_exclusive_group(required=True)
     multi_or_single_group.add_argument('-w', '--wordlist', type=str, help="path to wordlist")
     multi_or_single_group.add_argument('-u', '--username', help='a single username to test', type=str)
 
@@ -159,4 +159,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
