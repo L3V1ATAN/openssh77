@@ -51,8 +51,8 @@ def apply_monkey_patch() -> None:
 
     auth_handler = paramiko.auth_handler.AuthHandler
 
-    # Acceder a la propiedad correctamente
-    client_handler_table = auth_handler._client_handler_table.copy()
+    # Obtener el valor de la propiedad _client_handler_table
+    client_handler_table = auth_handler._client_handler_table
 
     old_msg_service_accept = client_handler_table[paramiko.common.MSG_SERVICE_ACCEPT]
 
@@ -67,13 +67,15 @@ def apply_monkey_patch() -> None:
         """ Called during authentication when a username is not found. """
         raise InvalidUsername(*args, **kwargs)
 
-    client_handler_table.update({
+    # Crear una copia del diccionario y actualizarlo
+    patched_handler_table = client_handler_table.copy()
+    patched_handler_table.update({
         paramiko.common.MSG_SERVICE_ACCEPT: patched_msg_service_accept,
         paramiko.common.MSG_USERAUTH_FAILURE: patched_userauth_failure
     })
 
-    # Establecer la tabla de controladores parcheada
-    auth_handler._client_handler_table = client_handler_table
+    # Establecer la propiedad _client_handler_table con la tabla parcheada
+    auth_handler._client_handler_table = patched_handler_table
 
 def create_socket(hostname: str, port: int) -> Union[socket.socket, None]:
     """ Small helper to stay DRY.
