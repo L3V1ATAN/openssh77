@@ -1,20 +1,4 @@
 #!/usr/bin/env python3
-"""
-derived from work done by Matthew Daley
-https://bugfuzz.com/stuff/ssh-check-username.py
-
-props to Justin Gardner for the add_boolean workaround
-
-CVE-2018-15473
---------------
-OpenSSH through 7.7 is prone to a user enumeration vulnerability due to not delaying bailout for an
-invalid authenticating user until after the packet containing the request has been fully parsed, related to
-auth2-gss.c, auth2-hostbased.c, and auth2-pubkey.c.
-
-Author: epi
-    https://epi052.gitlab.io/notes-to-self/
-    https://gitlab.com/epi052/cve-2018-15473
-"""
 import sys
 import re
 import socket
@@ -181,7 +165,7 @@ def main():
             print(f'[!] Attempted OpenSSH version detection; version not recognized.\n[!] Found: {regex.group("version")}')
         else:
             ver_clr = 'green' if version <= 7.7 else 'red'
-            print(f"[+] {Color.string('OpenSSH', color=ver_clr)} version {Color.string(version, color=ver_clr)} found")
+            print(f"[+] {Color.string('OpenSSH', color=ver_clr)} version {Color.string(version, color=ver_clr)} Encontrado")
     else:
         print(f'[!] Attempted OpenSSH version detection; version not recognized.\n[!] Found: {Color.string(banner, color="yellow")}')
 
